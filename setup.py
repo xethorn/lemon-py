@@ -23,13 +23,13 @@ class PyTest(TestCommand):
 
     def run_tests(self):
         import pytest
-        errno = pytest.main('-x tests/')
+        errno = pytest.main('-x tests/ --cov lemon --cov-report term-missing')
         sys.exit(errno)
 
 
 setup(
     name='Lemon',
-    version='1.0',
+    version='0.0.1',
     url='http://github.com/theorchard/lemon-py/',
     license='MIT',
     author='Michael Ortali',
@@ -42,10 +42,8 @@ setup(
     platforms='any',
     install_requires=[
         'Flask',
-        'pytest',
-        'pytest-cov'],
+        'requests'],
     tests_require=[
-        'pytest',
         'pytest-cov'],
     cmdclass = {
         'test': PyTest})
