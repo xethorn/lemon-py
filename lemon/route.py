@@ -33,11 +33,11 @@ def add(lemon, rule, handler=None, app=None, **options):
             # Test in: tests/test_routes.py:test_route_fetch
             replacements = {'<' + k + '>': v for k, v in kwargs.items()}
             view_options = prepare(options, replacements)
-            html = view.render_main_view(handler, **view_options)
+            html = view.render_main_view(lemon, handler, **view_options)
             return html
 
         elif callable(handler):
-            return handler(request, options=options)
+            return handler(lemon, request, options=options)
 
     if isinstance(handler, str):
         lemon.add_route_views(
