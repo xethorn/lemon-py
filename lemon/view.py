@@ -101,9 +101,9 @@ class View():
                 draw this specific view.
         """
 
-        self.register(kwargs.get('parent', None))
+        self.register(kwargs.get('parent') or None)
         self.fetch(kwargs.get('fetch'))
-        self.params = kwargs.get('params', dict())
+        self.params = kwargs.get('params') or dict()
 
         return jinja2.Markup('<div '
             'id="' + self.id + '" class="View ' + self.name + '">' +
