@@ -37,7 +37,7 @@ def add(lemon, rule, handler=None, app=None, **options):
             return html
 
         elif callable(handler):
-            return handler(lemon, request, options=options)
+            return handler(request, options=options)
 
     if isinstance(handler, str):
         lemon.add_route_views(
