@@ -85,7 +85,7 @@ class Lemon(object):
         view.create_environment(self)
 
         # Register the routes.
-        self.add_route('/views/', handlers.view_handler, app, methods=['POST'])
+        self.add_route(api_url, handlers.view_handler, app, methods=['POST'])
 
     def add_route(self, rule, handler, app=None, **options):
         """Add a new route.
@@ -97,6 +97,7 @@ class Lemon(object):
                 ``add_url_rule`` method or the handler itself.
         """
 
+        app = app or self.app
         route.add(self, rule, handler, app=app, **options)
 
     def add_route_views(self, **view_info):
