@@ -42,7 +42,8 @@ from lemon import handlers
 
 class Lemon(object):
 
-    def __init__(self, app=None, app_view=None, view_path=None):
+    def __init__(self, app=None, app_view=None, view_path=None,
+                 api_handler=None):
         """Initialize Lemon.
 
         Create one instance of Lemon and defines the basic configuration of the
@@ -52,10 +53,12 @@ class Lemon(object):
             app (Flask): The flask application.
             app_view (string): The application main view.
             view_path (string): The application view path.
+            api_handler: The API handler.
         """
 
         self.app = app
         self.route_views = []
+        self.api_handler = api_handler
 
         if app is not None:
             self.init_app(app, app_view, view_path)

@@ -1,4 +1,5 @@
 from jinja2 import Template
+from tests.fixtures.fixture_api_handler import api
 from tests.fixtures.fixture_server import app
 from tests.fixtures.fixture_server import lemon
 from unittest.mock import MagicMock
@@ -160,3 +161,18 @@ def test_get():
     """
 
     assert isinstance(view.get('Test'), view.View)
+
+
+def test_fetching_data(monkeypatch):
+    """Test fetching data for a view.
+    """
+
+    mock = MagicMock(return_value='response')
+    monkeypatch.setattr(api, 'get', mock)
+
+    params = dict(key='value')
+    test_view = view.View('Test')
+    test_view.fetch(dict(endpoint='/url/', params=params))
+
+    assert test_view.data is 'response'
+    mock.assert_called_once_with('Test', endpoint='/url/', params=params)
