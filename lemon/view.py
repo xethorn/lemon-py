@@ -55,6 +55,24 @@ class View():
         self.id = str(uuid.uuid4())
         self.template = '%(path)s/%(name)s.nunjucks' % dict(
             path=self.path, name=self.name)
+        self.describe()
+
+
+    def describe(self, tag=None, classes=None, attrs=None):
+        """Describe a view.
+
+        The description of a view can alter the css classes appended, the
+        attribtues and the tags.
+
+        Args:
+            tag (string): Valid html tag (e.g. `div`, `button`).
+            classes (list): Css classes to use for this particular view.
+            attrs (dict): HTML Attributes (other than classes.)
+        """
+
+        self.tag = tag or 'div'
+        self.classes = classes or []
+        self.attrs = attrs or {}
 
 
     def register(self, parent=None):
@@ -94,10 +112,38 @@ class View():
         env = view_environments.get(current_app, None)
         if not env:
             return None
-        print(dir(env.globals))
 
         handler = env.globals.get('lemon').api_handler
         self.data = handler.get(self.path, **self.api)
+
+
+    def render_response(self, html):
+        """Render the html response for the view.
+
+        The generated response takes in ready to go html and will also use a
+        lot of the view values (id, tag, classes, attributes) to generate the
+        container of the view.
+
+        Args:
+            html (string): the html for this view.
+        Return:
+            String: the container of the view along with the html.
+        """
+
+        html_element = dict(
+            id=self.id,
+            html=html,
+            tag_name=self.tag,
+            classes=' '.join(self.classes + [self.name]),
+            attrs=' '.join([
+                n + '="' + jinja2.escape(v) + '" '
+                for n, v in self.attrs.items()]))
+
+        return (
+            '<%(tag_name)s id="%(id)s" class="View %(classes)s" %(attrs)s>' +
+                '%(html)s' +
+            '</%(tag_name)s>') % html_element
+
 
     def render(self, **kwargs):
         """Render a view.
@@ -112,15 +158,13 @@ class View():
         self.params = kwargs.get('params') or dict()
 
         environment = view_environments[current_app]
+        html = environment.get_template(self.template).render(
+            params=self.params,
+            api=self.api,
+            data=self.data,
+            parent=self)
 
-        return jinja2.Markup('<div '
-            'id="' + self.id + '" class="View ' + self.name + '">' +
-            environment.get_template(self.template).render(
-                params=self.params,
-                api=self.api,
-                data=self.data,
-                parent=self) +
-            '</div>')
+        return jinja2.Markup(self.render_response(html))
 
 
     def to_dict(self):
@@ -235,6 +279,17 @@ def jsonify(obj):
     return flask.json.dumps(obj)
 
 
+@jinja2.contextfunction
+def describe(context, tag=None, classes=None, attrs=None):
+    """Describe a view.
+
+    Proxy for View.describe
+    """
+
+    context.get('parent').describe(tag, classes, attrs)
+    return ''
+
+
 view_environments = {}
 
 
@@ -254,6 +309,7 @@ def create_environment(lemon):
 
     view_environments[lemon.app].globals.update(
         lemon=lemon,
+        describe=describe,
         view=jinja2_render,
         Api=api.jinja2,
         jsonify=jsonify)
