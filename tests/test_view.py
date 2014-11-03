@@ -141,6 +141,39 @@ def test_jinja2_render(monkeypatch):
     assert html.find(identifier) > 0
 
 
+def test_jinja2_render_with_tag_name():
+    """Test jinja2 render with a different view tag.
+    """
+
+    response = view.render_main_view(lemon, primary_view='Button')
+    create_template = view.view_environments[app].from_string
+    html = create_template("{{ view('Button') }}").render()
+    assert html.find('<button') > -1
+
+
+def test_jinja2_render_with_tag_name():
+    """Test jinja2 render with additional classes
+    """
+
+    response = view.render_main_view(lemon, primary_view='Button')
+    create_template = view.view_environments[app].from_string
+    html = create_template(
+        "{{ view('Button', params={'classes': ['Test']}) }}").render()
+    assert html.find('Test') > -1
+
+
+def test_jinja2_render_with_attributes():
+    """Test jinja2 render with additional classes
+    """
+
+    response = view.render_main_view(lemon, primary_view='Button')
+    create_template = view.view_environments[app].from_string
+    html = create_template(
+        "{{ view('Button', params={'attrs': {'data-id': 'foo'}}) }}").render()
+    assert html.find('data-id') > -1
+    assert html.find('foo') > -1
+
+
 def test_add_child_with_template(monkeypatch):
     """Test adding child.
 
