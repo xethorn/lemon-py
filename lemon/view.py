@@ -90,8 +90,14 @@ class View():
             endpoint=params.get('endpoint'),
             params=params.get('params'))
 
-        self.data = api.get(**self.api)
 
+        env = view_environments.get(current_app, None)
+        if not env:
+            return None
+        print(dir(env.globals))
+
+        handler = env.globals.get('lemon').api_handler
+        self.data = handler.get(self.path, **self.api)
 
     def render(self, **kwargs):
         """Render a view.
@@ -105,9 +111,11 @@ class View():
         self.fetch(kwargs.get('fetch'))
         self.params = kwargs.get('params') or dict()
 
+        environment = view_environments[current_app]
+
         return jinja2.Markup('<div '
             'id="' + self.id + '" class="View ' + self.name + '">' +
-            view_environments[current_app].get_template(self.template).render(
+            environment.get_template(self.template).render(
                 params=self.params,
                 api=self.api,
                 data=self.data,
@@ -148,7 +156,7 @@ class MainView(View):
             kwargs.update(routes=lemon.route_views)
 
         render = view_environments[current_app].get_template(
-            self.template).render(**kwargs)
+            self.template, lemon).render(**kwargs)
         return render
 
 
@@ -166,7 +174,6 @@ def render_main_view(lemon, primary_view, **kwargs):
 
     main_view = MainView(current_app.config.get('LEMON_APP_VIEW'))
     html = main_view.render(
-        lemon=lemon,
         parent=main_view,
         primary_view=primary_view,
         params=kwargs)
@@ -246,6 +253,7 @@ def create_environment(lemon):
         autoescape=True)
 
     view_environments[lemon.app].globals.update(
+        lemon=lemon,
         view=jinja2_render,
         Api=api.jinja2,
         jsonify=jsonify)

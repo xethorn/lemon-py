@@ -23,7 +23,7 @@ class PyTest(TestCommand):
 
     def run_tests(self):
         import pytest
-        errno = pytest.main('-x tests/ --cov lemon --cov-report term-missing')
+        errno = pytest.main('-x tests/ --cov lemon --cov-report term-missing --pdb')
         sys.exit(errno)
 
 
