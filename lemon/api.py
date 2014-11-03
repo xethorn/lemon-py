@@ -34,6 +34,6 @@ def get(endpoint, params=None):
     add view behavior for each of those.
     """
 
-    url = urllib.parse.urljoin(current_app.config['LEMON_API_URL'], endpoint)
+    url = urllib.parse.urljoin('/api/', endpoint)
     resp = requests.get(url, params=params)
     return resp.json()

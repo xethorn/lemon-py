@@ -5,6 +5,5 @@ app = Flask(__name__)
 lemon = Lemon(
     app,
     app_view='AppView',
-    view_path='tests/fixtures/views/',
-    api_url='/views/')
+    view_path='tests/fixtures/views/')
 client = app.test_client()

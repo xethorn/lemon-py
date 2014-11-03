@@ -16,10 +16,6 @@ Configuration
 - _View Path (view_path)_: Where all the views are located. For consistency,
   they should all be in the same directory.
 
-- _Api URL (api_url - experimental)_: The Api url is the url that all views will
-  fetch to get more data.
-
-
 Example
 -------
 
@@ -32,7 +28,7 @@ from flask import Flask
 from lemon import Lemon
 
 app = Flask(__name__)
-lemon = Lemon(app, app_view='AppView', view_path='views/', api_url='/api/')
+lemon = Lemon(app, app_view='AppView', view_path='views/')
 ```
 
 """
@@ -46,8 +42,7 @@ from lemon import handlers
 
 class Lemon(object):
 
-    def __init__(
-            self, app=None, app_view=None, view_path=None, api_url=None):
+    def __init__(self, app=None, app_view=None, view_path=None):
         """Initialize Lemon.
 
         Create one instance of Lemon and defines the basic configuration of the
@@ -57,35 +52,32 @@ class Lemon(object):
             app (Flask): The flask application.
             app_view (string): The application main view.
             view_path (string): The application view path.
-            api_url (string): _experimental_, the application api url.
         """
 
         self.app = app
         self.route_views = []
 
         if app is not None:
-            self.init_app(app, app_view, view_path, api_url)
+            self.init_app(app, app_view, view_path)
 
-    def init_app(self, app, app_view, view_path, api_url):
+    def init_app(self, app, app_view, view_path):
         """Set the configuration and initialize the jinja2 environment.
 
         Args:
             app (Flask): The flask application.
             app_view (string): The application main view.
             view_path (string): The application view path.
-            api_url (string): _experimental_, the application api url.
         """
 
         # Set all the app configuration.
         app.config.setdefault('LEMON_APP_VIEW', app_view or 'App')
         app.config.setdefault('LEMON_VIEW_PATH', view_path or '/views/')
-        app.config.setdefault('LEMON_API_URL', api_url)
 
         # Create the environment
         view.create_environment(self)
 
         # Register the routes.
-        self.add_route(api_url, handlers.view_handler, app, methods=['POST'])
+        self.add_route('/view/', handlers.view_handler, app, methods=['POST'])
 
     def add_route(self, rule, handler, app=None, **options):
         """Add a new route.
