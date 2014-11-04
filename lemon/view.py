@@ -109,10 +109,7 @@ class View():
             params=params.get('params'))
 
 
-        env = view_environments.get(current_app, None)
-        if not env:
-            return None
-
+        env = current_app.jinja2_env
         handler = env.globals.get('lemon').api_handler
         self.data = handler.get(self.path, **self.api)
 
@@ -157,7 +154,7 @@ class View():
         self.fetch(kwargs.get('fetch'))
         self.params = kwargs.get('params') or dict()
 
-        environment = view_environments[current_app]
+        environment = current_app.jinja2_env
         html = environment.get_template(self.template).render(
             params=self.params,
             api=self.api,
@@ -199,7 +196,7 @@ class MainView(View):
         if lemon:
             kwargs.update(routes=lemon.route_views)
 
-        render = view_environments[current_app].get_template(
+        render = current_app.jinja2_env.get_template(
             self.template, lemon).render(**kwargs)
         return render
 
@@ -290,9 +287,6 @@ def describe(context, tag=None, classes=None, attrs=None):
     return ''
 
 
-view_environments = {}
-
-
 def create_environment(lemon):
     """Create the jinja2 environmnet for a lemon instance.
 
@@ -303,11 +297,11 @@ def create_environment(lemon):
     view_path = lemon.app.config['LEMON_VIEW_PATH']
     view_loader = jinja2.FileSystemLoader([view_path])
 
-    view_environments[lemon.app] = jinja2.Environment(
+    lemon.app.jinja2_env = jinja2.Environment(
         loader=view_loader,
         autoescape=True)
 
-    view_environments[lemon.app].globals.update(
+    lemon.app.jinja2_env.globals.update(
         lemon=lemon,
         describe=describe,
         view=jinja2_render,
