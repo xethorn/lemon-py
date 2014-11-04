@@ -57,7 +57,6 @@ class View():
             path=self.path, name=self.name)
         self.describe()
 
-
     def describe(self, tag=None, classes=None, attrs=None):
         """Describe a view.
 
@@ -74,7 +73,6 @@ class View():
         self.classes = classes or []
         self.attrs = attrs or {}
 
-
     def register(self, parent=None):
         """Register a child with its parent.
 
@@ -85,7 +83,6 @@ class View():
         if parent:
             parent.add_child(self)
 
-
     def add_child(self, child):
         """Add a child to the view.
 
@@ -95,7 +92,6 @@ class View():
 
         if not child == self:
             self.children.append(child)
-
 
     def fetch(self, params):
         """Fetch the api to display information.
@@ -108,11 +104,9 @@ class View():
             endpoint=params.get('endpoint'),
             params=params.get('params'))
 
-
         env = current_app.jinja_env
         handler = env.globals.get('lemon').api_handler
         self.data = handler.get(self.path, **self.api)
-
 
     def render_response(self, html):
         """Render the html response for the view.
@@ -138,9 +132,8 @@ class View():
 
         return (
             '<%(tag_name)s id="%(id)s" class="View %(classes)s" %(attrs)s>' +
-                '%(html)s' +
+            '%(html)s' +
             '</%(tag_name)s>') % html_element
-
 
     def render(self, **kwargs):
         """Render a view.
@@ -162,7 +155,6 @@ class View():
             parent=self)
 
         return jinja2.Markup(self.render_response(html))
-
 
     def to_dict(self):
         """Render the dictionary representation of this object.
@@ -191,7 +183,6 @@ class MainView(View):
         super().__init__(path)
         MainView.instance = self
 
-
     def render(self, lemon=None, **kwargs):
         if lemon:
             kwargs.update(routes=lemon.route_views)
@@ -215,6 +206,7 @@ def render_main_view(lemon, primary_view, **kwargs):
 
     main_view = MainView(current_app.config.get('LEMON_APP_VIEW'))
     html = main_view.render(
+        lemon=lemon,
         parent=main_view,
         primary_view=primary_view,
         params=kwargs)
