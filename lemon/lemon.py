@@ -79,7 +79,7 @@ class Lemon(object):
         # Create the environment
         view.create_environment(self)
 
-        # Register the routes.
+        # Register the routes
         self.add_route('/view/', handlers.view_handler, app, methods=['POST'])
 
     def add_route(self, rule, handler, app=None, **options):
