@@ -68,12 +68,12 @@ def test_main_view_rendering(monkeypatch):
         '{% endif %}');
 
     app.app_context().push()
-    create_template = app.jinja2_env.from_string
+    create_template = app.jinja_env.from_string
 
     template = create_template(value)
     magic_template = MagicMock(return_value=template)
     monkeypatch.setattr(
-        app.jinja2_env, 'get_template', magic_template)
+        app.jinja_env, 'get_template', magic_template)
 
     my_view = view.MainView('Test')
     primary_view = view.View('PrimaryView')
@@ -97,7 +97,7 @@ def test_view_rendering(monkeypatch):
     template = Template(value)
     magic_template = MagicMock(return_value=template)
     monkeypatch.setattr(
-        app.jinja2_env, 'get_template', magic_template)
+        app.jinja_env, 'get_template', magic_template)
     my_view = view.View('Test')
 
     assert not my_view.render() == value
@@ -131,10 +131,10 @@ def test_jinja2_render(monkeypatch):
     render = view.View(view_name).render
     my_view_tpl = Template(identifier)
     monkeypatch.setattr(
-        app.jinja2_env, 'get_template',
+        app.jinja_env, 'get_template',
         MagicMock(return_value=my_view_tpl))
 
-    create_template = app.jinja2_env.from_string
+    create_template = app.jinja_env.from_string
     html = create_template("{{ view('" + view_name +"') }}").render()
 
     assert view.render(view_name).find(identifier) > 0
@@ -146,7 +146,7 @@ def test_jinja2_render_with_tag_name():
     """
 
     response = view.render_main_view(lemon, primary_view='Button')
-    create_template = app.jinja2_env.from_string
+    create_template = app.jinja_env.from_string
     html = create_template("{{ view('Button') }}").render()
     assert html.find('<button') > -1
 
@@ -156,7 +156,7 @@ def test_jinja2_render_with_tag_name():
     """
 
     response = view.render_main_view(lemon, primary_view='Button')
-    create_template = app.jinja2_env.from_string
+    create_template = app.jinja_env.from_string
     html = create_template(
         "{{ view('Button', params={'classes': ['Test']}) }}").render()
     assert html.find('Test') > -1
@@ -167,7 +167,7 @@ def test_jinja2_render_with_attributes():
     """
 
     response = view.render_main_view(lemon, primary_view='Button')
-    create_template = app.jinja2_env.from_string
+    create_template = app.jinja_env.from_string
     html = create_template(
         "{{ view('Button', params={'attrs': {'data-id': 'foo'}}) }}").render()
     assert html.find('data-id') > -1
