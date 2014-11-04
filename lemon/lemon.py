@@ -76,6 +76,10 @@ class Lemon(object):
         app.config.setdefault('LEMON_APP_VIEW', app_view or 'App')
         app.config.setdefault('LEMON_VIEW_PATH', view_path or '/views/')
 
+        if not hasattr(app, 'extensions'):
+            app.extensions = {}
+        app.extensions['lemon'] = self
+
         # Create the environment
         view.create_environment(self)
 
