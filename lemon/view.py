@@ -26,6 +26,7 @@ Date:
     09/25/2014
 """
 
+from threading import Thread
 from flask import current_app
 import flask
 import jinja2
@@ -93,7 +94,7 @@ class View():
         if not child == self:
             self.children.append(child)
 
-    def fetch(self, params):
+    def fetch(self, lemon, params):
         """Fetch the api to display information.
         """
 
@@ -104,11 +105,10 @@ class View():
             endpoint=params.get('endpoint'),
             params=params.get('params'))
 
-        env = current_app.jinja_env
-        handler = env.globals.get('lemon').api_handler
+        handler = lemon.api_handler
         self.data = handler.get(self.path, **self.api)
 
-    def render_response(self, html):
+    def render_response(self, kwargs):
         """Render the html response for the view.
 
         The generated response takes in ready to go html and will also use a
@@ -116,45 +116,70 @@ class View():
         container of the view.
 
         Args:
-            html (string): the html for this view.
+            template (string): the html for this view.
+            kwargs (dict): The params of the views
         Return:
             String: the container of the view along with the html.
         """
 
+        lemon = kwargs.get('lemon')
+
+        self.fetch(lemon, kwargs.get('fetch'))
+        self.params = kwargs.get('params') or dict()
+
+        html = lemon.app.jinja_env.get_template(self.template).render(
+            lemon=lemon,
+            params=self.params,
+            api=self.api,
+            data=self.data,
+            parent=self)
+
+        # Wait for all children to be rendered and replace them as we get them.
+        for child in self.children:
+            child.finish()
+            html = html.replace('#%s' % child.id, child.html)
+
         html_element = dict(
             id=self.id,
-            html=html,
+            html=jinja2.Markup(html),
             tag_name=self.tag,
             classes=' '.join(self.classes + [self.name]),
             attrs=' '.join([
                 n + '="' + jinja2.escape(v) + '" '
                 for n, v in self.attrs.items()]))
 
-        return (
+        self.html = jinja2.Markup(
             '<%(tag_name)s id="%(id)s" class="View %(classes)s" %(attrs)s>' +
             '%(html)s' +
             '</%(tag_name)s>') % html_element
 
     def render(self, **kwargs):
-        """Render a view.
+        """Render a view (async).
+
+        The view is rendered in a thread, which allows other child views to be
+        rendered at the same time.
 
         Args:
             kwargs (dict): Contains the informations that are allowing us to
                 draw this specific view.
+        Return:
+            string: The id of the view (which will later on be replaced with
+                its html.)
         """
 
         self.register(kwargs.get('parent') or None)
-        self.fetch(kwargs.get('fetch'))
-        self.params = kwargs.get('params') or dict()
+        self.html = None
 
-        environment = current_app.jinja_env
-        html = environment.get_template(self.template).render(
-            params=self.params,
-            api=self.api,
-            data=self.data,
-            parent=self)
-
-        return jinja2.Markup(self.render_response(html))
+        # Create the thread.
+        if kwargs.get('fetch'):
+            thread = Thread(
+                target=self.render_response, args=(kwargs,))
+            thread.start()
+            self.finish = thread.join
+            return '#%(id)s' % dict(id=self.id)
+        self.finish = lambda: None
+        self.render_response(kwargs)
+        return self.html
 
     def to_dict(self):
         """Render the dictionary representation of this object.
@@ -185,10 +210,14 @@ class MainView(View):
 
     def render(self, lemon=None, **kwargs):
         if lemon:
-            kwargs.update(routes=lemon.route_views)
+            kwargs.update(routes=lemon.route_views, lemon=lemon)
 
         render = current_app.jinja_env.get_template(
-            self.template, lemon).render(**kwargs)
+            self.template).render(**kwargs)
+
+        for child in self.children:
+            child.finish()
+            render = render.replace('#%s' % child.id, child.html)
         return render
 
 
@@ -204,12 +233,22 @@ def render_main_view(lemon, primary_view, **kwargs):
         `jinja2.Markup`: The html of the module.
     """
 
+    primary_view = View(primary_view)
+    primary_view.render(
+        lemon=lemon,
+        fetch=kwargs.get('fetch'),
+        params=kwargs.get('params'),
+        data=kwargs.get('data'))
+
     main_view = MainView(current_app.config.get('LEMON_APP_VIEW'))
+    main_view.add_child(primary_view)
+    primary_view.finish()
+
     html = main_view.render(
         lemon=lemon,
         parent=main_view,
-        primary_view=primary_view,
-        params=kwargs)
+        primary_view=primary_view.html)
+
     return html
 
 
@@ -255,7 +294,7 @@ def jinja2_render(context, view_name, **kwargs):
         `jinja2.Markup`: the HTML of the view.
     """
 
-    kwargs.update(parent=context.get('parent'))
+    kwargs.update(lemon=context.get('lemon'), parent=context.get('parent'))
     return render(view_name, **kwargs)
 
 
