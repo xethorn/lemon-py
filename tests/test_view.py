@@ -64,7 +64,7 @@ def test_main_view_rendering(monkeypatch):
 
     value = (
         'Hello {% if primary_view %}'
-        '{{ view(primary_view) }}'
+        '{{ primary_view|safe }}'
         '{% endif %}');
 
     app.app_context().push()
@@ -79,8 +79,8 @@ def test_main_view_rendering(monkeypatch):
     primary_view = view.View('PrimaryView')
 
     app.config.setdefault('LEMON_APP_VIEW', 'Test')
-
     value = view.render_main_view(lemon, primary_view='PrimaryView')
+
     assert magic_template.called
     assert value.find('View Primary') > 0
 
@@ -99,9 +99,11 @@ def test_view_rendering(monkeypatch):
     monkeypatch.setattr(
         app.jinja_env, 'get_template', magic_template)
     my_view = view.View('Test')
+    my_view.render(lemon=lemon)
+    my_view.finish()
 
-    assert not my_view.render() == value
-    assert my_view.render().find(value) > 0
+    assert not my_view.html == value
+    assert my_view.html.find(value) > 0
     assert magic_template.called
 
 
@@ -123,6 +125,8 @@ def test_call_non_existent_view():
 
 def test_jinja2_render(monkeypatch):
     """Test jinja2 render and inclusion of other views.
+
+    The view included should
     """
 
     identifier = '<MyView>'
@@ -135,9 +139,10 @@ def test_jinja2_render(monkeypatch):
         MagicMock(return_value=my_view_tpl))
 
     create_template = app.jinja_env.from_string
-    html = create_template("{{ view('" + view_name +"') }}").render()
+    html = create_template(
+        "{{ view('" + view_name +"') }}").render(lemon=lemon)
 
-    assert view.render(view_name).find(identifier) > 0
+    assert str(view.render(view_name, lemon=lemon)).find(identifier) > 0
     assert html.find(identifier) > 0
 
 
@@ -147,7 +152,7 @@ def test_jinja2_render_with_tag_name():
 
     response = view.render_main_view(lemon, primary_view='Button')
     create_template = app.jinja_env.from_string
-    html = create_template("{{ view('Button') }}").render()
+    html = create_template("{{ view('Button') }}").render(lemon=lemon)
     assert html.find('<button') > -1
 
 
@@ -158,7 +163,7 @@ def test_jinja2_render_with_tag_name():
     response = view.render_main_view(lemon, primary_view='Button')
     create_template = app.jinja_env.from_string
     html = create_template(
-        "{{ view('Button', params={'classes': ['Test']}) }}").render()
+        "{{ view('Button', params={'classes': ['Test']}) }}").render(lemon=lemon)
     assert html.find('Test') > -1
 
 
@@ -169,7 +174,8 @@ def test_jinja2_render_with_attributes():
     response = view.render_main_view(lemon, primary_view='Button')
     create_template = app.jinja_env.from_string
     html = create_template(
-        "{{ view('Button', params={'attrs': {'data-id': 'foo'}}) }}").render()
+        "{{ view('Button', params={'attrs': {'data-id': 'foo'}}) }}").render(
+            lemon=lemon)
     assert html.find('data-id') > -1
     assert html.find('foo') > -1
 
@@ -205,7 +211,15 @@ def test_fetching_data(monkeypatch):
 
     params = dict(key='value')
     test_view = view.View('Test')
-    test_view.fetch(dict(endpoint='/url/', params=params))
+    test_view.fetch(lemon, dict(endpoint='/url/', params=params))
 
     assert test_view.data is 'response'
     mock.assert_called_once_with('Test', endpoint='/url/', params=params)
+
+
+def test_jsonify():
+    """Test the ability to jsonify an object
+    """
+
+    assert view.jsonify(True) == 'true'
+    assert view.jsonify({'foo': 'bar'}) == '{"foo": "bar"}'
