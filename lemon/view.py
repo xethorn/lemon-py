@@ -123,12 +123,14 @@ class View():
         """
 
         lemon = kwargs.get('lemon')
+        context = kwargs.get('context')
 
         self.fetch(lemon, kwargs.get('fetch'))
         self.params = kwargs.get('params') or dict()
 
         html = lemon.app.jinja_env.get_template(self.template).render(
             lemon=lemon,
+            context=context,
             params=self.params,
             api=self.api,
             data=self.data,
@@ -137,7 +139,7 @@ class View():
         # Wait for all children to be rendered and replace them as we get them.
         for child in self.children:
             child.finish()
-            html = html.replace('#%s' % child.id, child.html)
+            html = html.replace('#%s' % child.id, child.html or '')
 
         html_element = dict(
             id=self.id,
@@ -168,7 +170,7 @@ class View():
         """
 
         self.register(kwargs.get('parent') or None)
-        self.html = None
+        self.html = ''
 
         # Create the thread.
         if kwargs.get('fetch'):
@@ -177,6 +179,7 @@ class View():
             thread.start()
             self.finish = thread.join
             return '#%(id)s' % dict(id=self.id)
+
         self.finish = lambda: None
         self.render_response(kwargs)
         return self.html
@@ -236,6 +239,7 @@ def render_main_view(lemon, primary_view, **kwargs):
     primary_view = View(primary_view)
     primary_view.render(
         lemon=lemon,
+        context=lemon.context,
         fetch=kwargs.get('fetch'),
         params=kwargs.get('params'),
         data=kwargs.get('data'))
@@ -246,6 +250,7 @@ def render_main_view(lemon, primary_view, **kwargs):
 
     html = main_view.render(
         lemon=lemon,
+        context=lemon.context,
         parent=main_view,
         primary_view=primary_view.html)
 
@@ -294,7 +299,10 @@ def jinja2_render(context, view_name, **kwargs):
         `jinja2.Markup`: the HTML of the view.
     """
 
-    kwargs.update(lemon=context.get('lemon'), parent=context.get('parent'))
+    kwargs.update(
+        context=context.get('context'),
+        lemon=context.get('lemon'),
+        parent=context.get('parent'))
     return render(view_name, **kwargs)
 
 
