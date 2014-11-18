@@ -1,5 +1,6 @@
 import re
 
+from flask import abort
 from flask import current_app
 from flask import request
 from lemon import view
@@ -26,9 +27,13 @@ def add(lemon, rule, handler=None, app=None, **options):
         handler (string, Function): Handler for this url.
         options (dict): Additional options passed to the flask ``add_url_rule``
             method or the handler itself.
+        access (list): List of all the access methods to run, if one of those
+            methods returns false, a 403 is returned.
     """
 
     def callback(*arg, **kwargs):
+        check_access(options.get('access') or [])
+
         if isinstance(handler, str):  # pragma: no cover
             # Test in: tests/test_routes.py:test_route_fetch
             replacements = {'<' + k + '>': v for k, v in kwargs.items()}
@@ -54,6 +59,15 @@ def add(lemon, rule, handler=None, app=None, **options):
         rule, rule, callback, methods=options.get('methods'))
 
 
+def check_access(access):
+    """Check the access of an endpoint.
+    """
+
+    for current_access in access:
+        if not current_access():
+            abort(403)
+
+
 def prepare(options, replacements):
     """Prepare the options.
 
@@ -77,7 +91,7 @@ def prepare(options, replacements):
         value = replacements.get(options)
         if value:
             return value
-        return
+        return options
 
     view_options = {}
     for key, value in options.items():

@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+import pytest
 
 from lemon import route
 from lemon import view
@@ -32,8 +33,8 @@ def test_route_fetch(monkeypatch):
     """
 
     with app.app_context():
-        monkeypatch.setattr(view, 'render_main_view',
-            MagicMock(return_value='Called'))
+        monkeypatch.setattr(
+            view, 'render_main_view', MagicMock(return_value='Called'))
         route.add(lemon, '/viewname/', 'ViewName')
 
         response = client.get('/viewname/')
@@ -54,6 +55,21 @@ def test_route_fetch_with_handler(monkeypatch):
         assert handler.called
         assert response.data == b'Called'
         assert response.status_code == 200
+
+
+def test_route_add_handler_with_access(monkeypatch):
+    """Test adding a route that's an handler
+
+    As a reminder: handlers are python module methods, they are callable
+    elements.
+    """
+
+    with app.app_context():
+        handler = MagicMock(return_value='Called')
+        access = MagicMock(return_value=False)
+        route.add(lemon, '/access/', handler, access=[access])
+        client.get('/access/')
+        assert access.called
 
 
 def test_route_preparation():

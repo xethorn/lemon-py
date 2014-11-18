@@ -65,7 +65,7 @@ def test_main_view_rendering(monkeypatch):
     value = (
         'Hello {% if primary_view %}'
         '{{ primary_view|safe }}'
-        '{% endif %}');
+        '{% endif %}')
 
     app.app_context().push()
     create_template = app.jinja_env.from_string
@@ -140,7 +140,7 @@ def test_jinja2_render(monkeypatch):
 
     create_template = app.jinja_env.from_string
     html = create_template(
-        "{{ view('" + view_name +"') }}").render(lemon=lemon)
+        "{{ view('" + view_name + "') }}").render(lemon=lemon)
 
     assert str(view.render(view_name, lemon=lemon)).find(identifier) > 0
     assert html.find(identifier) > 0
@@ -163,7 +163,8 @@ def test_jinja2_render_with_tag_name():
     response = view.render_main_view(lemon, primary_view='Button')
     create_template = app.jinja_env.from_string
     html = create_template(
-        "{{ view('Button', params={'classes': ['Test']}) }}").render(lemon=lemon)
+        "{{ view('Button', params={'classes': ['Test']}) }}").render(
+        lemon=lemon)
     assert html.find('Test') > -1
 
 

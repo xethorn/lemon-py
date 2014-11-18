@@ -58,6 +58,7 @@ class Lemon(object):
 
         self.app = app
         self.route_views = []
+        self._context = {}
         self.api_handler = api_handler
 
         if app is not None:
@@ -107,3 +108,15 @@ class Lemon(object):
         """
 
         self.route_views.append(view_info)
+
+    @property
+    def context(self):
+        """Provides additional template context.
+        """
+
+        return {key: fn() for key, fn in self._context.items()}
+
+    def add_context(self, fn):
+        name = fn.__name__
+        self._context.update({name: fn})
+        return
