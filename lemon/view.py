@@ -94,7 +94,7 @@ class View():
         if not child == self:
             self.children.append(child)
 
-    def fetch(self, lemon, params):
+    def fetch(self, lemon, context, params):
         """Fetch the api to display information.
         """
 
@@ -106,7 +106,7 @@ class View():
             params=params.get('params'))
 
         handler = lemon.api_handler
-        self.data = handler.get(self.path, **self.api)
+        self.data = handler.get(context, view_name=self.path, **self.api)
 
     def render_response(self, kwargs):
         """Render the html response for the view.
@@ -125,7 +125,7 @@ class View():
         lemon = kwargs.get('lemon')
         context = kwargs.get('context')
 
-        self.fetch(lemon, kwargs.get('fetch'))
+        self.fetch(lemon, context, kwargs.get('fetch'))
         self.params = kwargs.get('params') or dict()
 
         html = lemon.app.jinja_env.get_template(self.template).render(
@@ -237,9 +237,10 @@ def render_main_view(lemon, primary_view, **kwargs):
     """
 
     primary_view = View(primary_view)
+    context = lemon.context
     primary_view.render(
         lemon=lemon,
-        context=lemon.context,
+        context=context,
         fetch=kwargs.get('fetch'),
         params=kwargs.get('params'),
         data=kwargs.get('data'))
@@ -250,7 +251,7 @@ def render_main_view(lemon, primary_view, **kwargs):
 
     html = main_view.render(
         lemon=lemon,
-        context=lemon.context,
+        context=context,
         parent=main_view,
         primary_view=primary_view.html)
 
