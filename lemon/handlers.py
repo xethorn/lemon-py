@@ -6,6 +6,7 @@ Handlers provide additional endpoints for all requests that do not correspond
 to an existing view.
 """
 
+from flask import current_app
 from flask import json
 from lemon import view
 
@@ -26,11 +27,22 @@ def view_handler(request, options=None):
             Backbone to regenerate the view.
     """
 
-    params = request.get_json(force=True)
+    lemon = current_app.extensions.get('lemon')
+    if not lemon:
+        abort(512)
+
+    params = json.loads(request.args.get('data'))
     primary_view = view.View(params.get('path'))
+    primary_view.render(
+        context=lemon.context,
+        fetch=params.get('fetch'),
+        id=params.get('id'),
+        lemon=lemon,
+        params=params.get('params'))
+        
+    primary_view.finish()
     response = json.dumps(dict(
-        html=primary_view.render(
-            fetch=params.get('fetch'),
-            params=params.get('params')),
+        html=primary_view.html,
         tree=primary_view.to_dict()))
+
     return response

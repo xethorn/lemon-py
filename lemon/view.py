@@ -53,7 +53,8 @@ class View():
         self.api = None
         self.data = None
         self.params = dict()
-        self.id = str(uuid.uuid4())
+        self.id = None
+        self.element_id = str(uuid.uuid4())
         self.template = '%(path)s/%(name)s.nunjucks' % dict(
             path=self.path, name=self.name)
         self.describe()
@@ -124,9 +125,15 @@ class View():
 
         lemon = kwargs.get('lemon')
         context = kwargs.get('context')
+        data = kwargs.get('data')
 
-        self.fetch(lemon, context, kwargs.get('fetch'))
+        if data:
+            self.data = data
+        else:
+            self.fetch(lemon, context, kwargs.get('fetch'))
+
         self.params = kwargs.get('params') or dict()
+        self.id = kwargs.get('id')
 
         html = lemon.app.jinja_env.get_template(self.template).render(
             lemon=lemon,
@@ -139,21 +146,27 @@ class View():
         # Wait for all children to be rendered and replace them as we get them.
         for child in self.children:
             child.finish()
-            html = html.replace('#%s' % child.id, child.html or '')
+            html = html.replace('#%s' % child.element_id, child.html or '')
 
         html_element = dict(
-            id=self.id,
+            id=self.element_id,
             html=jinja2.Markup(html),
             tag_name=self.tag,
             classes=' '.join(self.classes + [self.name]),
-            attrs=' '.join([
-                n + '="' + jinja2.escape(v) + '" '
-                for n, v in self.attrs.items()]))
+            attrs=jinja2.Markup(
+                ' '.join([
+                    n + jinja2.Markup('="') +
+                    jinja2.escape(v) + jinja2.Markup('" ')
+                    for n, v in self.attrs.items()])))
 
-        self.html = jinja2.Markup(
-            '<%(tag_name)s id="%(id)s" class="View %(classes)s" %(attrs)s>' +
-            '%(html)s' +
-            '</%(tag_name)s>') % html_element
+        if self.tag not in ['img', 'input']:
+            self.html = jinja2.Markup(
+                '<%(tag_name)s id="%(id)s" class="View %(classes)s" ' +
+                '%(attrs)s>%(html)s</%(tag_name)s>') % html_element
+        else:
+            self.html = jinja2.Markup(
+                '<%(tag_name)s id="%(id)s" class="View %(classes)s" ' +
+                '%(attrs)s>') % html_element
 
     def render(self, **kwargs):
         """Render a view (async).
@@ -178,7 +191,7 @@ class View():
                 target=self.render_response, args=(kwargs,))
             thread.start()
             self.finish = thread.join
-            return '#%(id)s' % dict(id=self.id)
+            return '#%(id)s' % dict(id=self.element_id)
 
         self.finish = lambda: None
         self.render_response(kwargs)
@@ -192,9 +205,10 @@ class View():
         """
 
         return dict(
-            api=self.api,
+            fetch=self.api,
             children=[child.to_dict() for child in self.children],
             id=self.id,
+            element_id=self.element_id,
             params=self.params,
             path=self.path)
 
@@ -239,6 +253,7 @@ def render_main_view(lemon, primary_view, **kwargs):
     primary_view = View(primary_view)
     context = lemon.context
     primary_view.render(
+        id='primary_view',
         lemon=lemon,
         context=context,
         fetch=kwargs.get('fetch'),

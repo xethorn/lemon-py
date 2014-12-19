@@ -31,7 +31,7 @@ def add(lemon, rule, handler=None, app=None, **options):
             methods returns false, a 403 is returned.
     """
 
-    def callback(*arg, **kwargs):
+    def callback(*args, **kwargs):
         check_access(options.get('access') or [])
 
         if isinstance(handler, str):  # pragma: no cover
@@ -42,7 +42,8 @@ def add(lemon, rule, handler=None, app=None, **options):
             return html
 
         elif callable(handler):
-            return handler(request, options=options)
+            kwargs.update(options=options)
+            return handler(request, *args, **kwargs)
 
     if isinstance(handler, str):
         lemon.add_route_views(
@@ -55,8 +56,9 @@ def add(lemon, rule, handler=None, app=None, **options):
     if not app:
         app = current_app
 
+    key = rule + '_'.join(options.get('methods', []))
     app.add_url_rule(
-        rule, rule, callback, methods=options.get('methods'))
+        rule, key, callback, methods=options.get('methods'))
 
 
 def check_access(access):
@@ -65,7 +67,7 @@ def check_access(access):
 
     for current_access in access:
         if not current_access():
-            abort(403)
+            abort(401)
 
 
 def prepare(options, replacements):
