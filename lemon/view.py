@@ -95,16 +95,9 @@ class View():
         if not child == self:
             self.children.append(child)
 
-    def fetch(self, lemon, context, params):
+    def fetch(self, lemon, context):
         """Fetch the api to display information.
         """
-
-        if not params:
-            return None
-
-        self.api = dict(
-            endpoint=params.get('endpoint'),
-            params=params.get('params'))
 
         handler = lemon.api_handler
         self.data = handler.get(context, view_name=self.path, **self.api)
@@ -127,10 +120,16 @@ class View():
         context = kwargs.get('context')
         data = kwargs.get('data')
 
+        fetch = kwargs.get('fetch')
+        if kwargs.get('fetch'):
+            self.api = dict(
+                endpoint=fetch.get('endpoint'),
+                params=fetch.get('params'))
+
         if data:
             self.data = data
-        else:
-            self.fetch(lemon, context, kwargs.get('fetch'))
+        elif self.api:
+            self.fetch(lemon, context)
 
         self.params = kwargs.get('params') or dict()
         self.id = kwargs.get('id')
