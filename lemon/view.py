@@ -233,7 +233,7 @@ class MainView(View):
 
         for child in self.children:
             child.finish()
-            render = render.replace('#%s' % child.id, child.html)
+            render = render.replace('#%s' % child.element_id, child.html)
         return render
 
 
