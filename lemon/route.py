@@ -36,7 +36,8 @@ def add(lemon, rule, handler=None, app=None, **options):
 
         if isinstance(handler, str):  # pragma: no cover
             # Test in: tests/test_routes.py:test_route_fetch
-            replacements = {'<' + k + '>': v for k, v in kwargs.items()}
+            replacements = {'{' + k + '}': v for k, v in request.args.items()}
+            replacements.update({'<' + k + '>': v for k, v in kwargs.items()})
             view_options = prepare(options, replacements)
             html = view.render_main_view(lemon, handler, **view_options)
             return html
@@ -97,6 +98,14 @@ def prepare(options, replacements):
 
     view_options = {}
     for key, value in options.items():
-        view_options[key] = prepare(value, replacements)
+        clear_value = prepare(value, replacements)
 
+        if not clear_value:
+            continue
+
+        if clear_value and isinstance(clear_value, str):
+            if clear_value[0].startswith('{') and clear_value.endswith('}'):
+                clear_value = None
+
+        view_options[key] = clear_value
     return view_options
