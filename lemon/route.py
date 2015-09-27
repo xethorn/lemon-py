@@ -94,6 +94,11 @@ def prepare(options, replacements):
         value = replacements.get(options)
         if value:
             return value
+
+        if options.find('<') > 0 or options.find('{'):
+            for key, value in replacements.items():
+                options = options.replace(key, value)
+
         return options
 
     view_options = {}
