@@ -95,7 +95,7 @@ def prepare(options, replacements):
         if value:
             return value
 
-        if options.find('<') > 0 or options.find('{'):
+        if options.find('<') > 0 or options.find('{') > 0:
             for key, value in replacements.items():
                 options = options.replace(key, value)
 
