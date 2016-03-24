@@ -52,7 +52,8 @@ def add(lemon, rule, handler=None, app=None, **options):
             keys=re.findall(r'(<.+?>)', rule),
             view=handler,
             params=options.get('params'),
-            fetch=options.get('fetch'))
+            fetch=options.get('fetch'),
+            access=[fn.__name__ for fn in options.get('access', [])])
 
     if not app:
         app = current_app
